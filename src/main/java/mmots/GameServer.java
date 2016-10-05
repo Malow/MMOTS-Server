@@ -3,25 +3,24 @@ package mmots;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.github.malow.malowlib.NetworkChannel;
-import com.github.malow.malowlib.NetworkPacket;
 import com.github.malow.malowlib.MaloWProcess;
+import com.github.malow.malowlib.NetworkPacket;
 import com.github.malow.malowlib.ProcessEvent;
 
 public class GameServer extends MaloWProcess
 {
-  private List<NetworkChannel> clients;
+  private List<Client> clients;
 
   public GameServer()
   {
-    this.clients = new ArrayList<NetworkChannel>();
+    this.clients = new ArrayList<Client>();
   }
 
-  public void ClientConnected(NetworkChannel nc)
+  public void addAuthorizedClient(Client client)
   {
-    nc.setNotifier(this);
-    nc.start();
-    this.clients.add(nc);
+    client.networkChannel.setNotifier(this);
+    this.clients.add(client);
+    System.out.println("New client added to GameServer: " + client.email);
   }
 
   @Override
@@ -33,7 +32,8 @@ public class GameServer extends MaloWProcess
       if (ev instanceof NetworkPacket)
       {
         NetworkPacket packet = (NetworkPacket) ev;
-        System.out.println("Msg received from client " + packet.getSender().GetChannelID() + ": " + packet.getMessage());
+        System.out.println("Msg received from client " + packet.getSender().getChannelID() + ": " + packet.getMessage());
+        packet.getSender().sendData("Response hihi");
       }
     }
   }
@@ -41,9 +41,13 @@ public class GameServer extends MaloWProcess
   @Override
   public void closeSpecific()
   {
-    for (NetworkChannel client : this.clients)
+    for (Client client : this.clients)
     {
-      client.close();
+      client.networkChannel.close();
+    }
+    for (Client client : this.clients)
+    {
+      client.networkChannel.waitUntillDone();
     }
   }
 }

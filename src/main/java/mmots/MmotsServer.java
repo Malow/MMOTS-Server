@@ -17,24 +17,38 @@ public class MmotsServer
   }
 
   private static GameServer gameServer;
+  private static Authenticator authenticator;
   private static RequestListener requestListener;
 
   private static void startup()
+  {
+    startupHttpsServer(7000);
+    startupSocketServer(7001);
+  }
+
+  private static void startupHttpsServer(int port)
   {
     AccountServerConfig config = new AccountServerConfig();
     config.databaseName = "AccountServer";
     config.databaseUser = "AccServUsr";
     config.databasePassword = "password";
     config.httpsApiCertPassword = "password";
-    config.httpsApiPort = 7000;
+    config.httpsApiPort = port;
 
     config.gmailUsername = "gladiatormanager.noreply";
     config.gmailPassword = "passwordFU";
 
     AccountServer.start(config);
+  }
 
+  public static void startupSocketServer(int port)
+  {
     gameServer = new GameServer();
-    requestListener = new RequestListener(7001, gameServer);
+    gameServer.start();
+    authenticator = new Authenticator(gameServer);
+    authenticator.start();
+    requestListener = new RequestListener(port, authenticator);
+    requestListener.start();
   }
 
   private static void shutdown()

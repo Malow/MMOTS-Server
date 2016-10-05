@@ -5,18 +5,18 @@ import com.github.malow.malowlib.NetworkServer;
 
 public class RequestListener extends NetworkServer
 {
-  private GameServer gameServer;
+  private Authenticator authenticator;
 
-  public RequestListener(int port, GameServer gameServer)
+  public RequestListener(int port, Authenticator authenticator)
   {
     super(port);
-    this.gameServer = gameServer;
+    this.authenticator = authenticator;
   }
 
   @Override
   public void clientConnected(NetworkChannel nc)
   {
-    this.gameServer.ClientConnected(nc);
+    this.authenticator.ClientConnected(nc);
   }
 
 }
