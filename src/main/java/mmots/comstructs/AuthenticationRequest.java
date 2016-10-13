@@ -1,11 +1,21 @@
 package mmots.comstructs;
 
-import com.github.malow.accountserver.comstructs.AuthorizedRequest;
-
-public class AuthenticationRequest extends AuthorizedRequest
+public class AuthenticationRequest extends Request
 {
-  public AuthenticationRequest(String email, String authToken)
+  public String email;
+  public String authToken;
+
+  public AuthenticationRequest(String method, String email, String authToken)
   {
-    super(email, authToken);
+    super(method);
+    this.email = email;
+    this.authToken = authToken;
+  }
+
+  @Override
+  public boolean isValid()
+  {
+    if (super.isValid() && this.email != null && this.authToken != null) return true;
+    return false;
   }
 }

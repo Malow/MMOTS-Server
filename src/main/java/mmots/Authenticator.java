@@ -3,25 +3,28 @@ package mmots;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.github.malow.accountserver.AccountServer;
+import com.github.malow.accountserver.database.AccountAccessor.WrongAuthentificationTokenException;
 import com.github.malow.malowlib.MaloWProcess;
 import com.github.malow.malowlib.NetworkChannel;
-import com.github.malow.malowlib.NetworkPacket;
 import com.github.malow.malowlib.ProcessEvent;
 import com.google.gson.Gson;
 
 import mmots.comstructs.AuthenticationRequest;
-import mmots.comstructs.AuthenticationResponse;
+import mmots.comstructs.ErrorResponse;
+import mmots.comstructs.Response;
 
 public class Authenticator extends MaloWProcess
 {
+  public static final String REQUEST_NAME = "Authentication";
   private GameServer gameServer;
-  private List<NetworkChannel> clients;
+  private List<Client> clients;
 
   public Authenticator(GameServer gameServer)
   {
     super();
     this.gameServer = gameServer;
-    this.clients = new ArrayList<NetworkChannel>();
+    this.clients = new ArrayList<Client>();
   }
 
   @Override
@@ -30,22 +33,37 @@ public class Authenticator extends MaloWProcess
     while (this.stayAlive)
     {
       ProcessEvent ev = this.waitEvent();
-      if (ev instanceof NetworkPacket)
+      if (ev instanceof GameNetworkPacket)
       {
-        NetworkPacket packet = (NetworkPacket) ev;
-        AuthenticationRequest req = new Gson().fromJson(packet.getMessage(), AuthenticationRequest.class);
-        if (req != null && req.isValid())
+        GameNetworkPacket packet = (GameNetworkPacket) ev;
+        AuthenticationRequest req = new Gson().fromJson(packet.message, AuthenticationRequest.class);
+        if (req != null && req.isValid() && req.method.equals(REQUEST_NAME))
         {
-          Client client = new Client(packet.getSender(), req.email, req.authToken);
-          gameServer.addAuthorizedClient(client);
-          this.clients.remove(packet.getSender());
-          packet.getSender().sendData(new Gson().toJson(new AuthenticationResponse(true)));
+          this.handleRequest(req, packet.client);
         }
         else
         {
-          packet.getSender().sendData(new Gson().toJson(new AuthenticationResponse(false)));
+          packet.client.sendData(new Gson().toJson(new ErrorResponse(req.method, false, "Unexpected method")));
         }
       }
+    }
+  }
+
+  private void handleRequest(AuthenticationRequest req, Client client)
+  {
+    try
+    {
+      Long accId = AccountServer.checkAuthentication(req.email, req.authToken);
+      client.accId = accId;
+      client.email = req.email;
+      client.authToken = req.authToken;
+      gameServer.addAuthorizedClient(client);
+      this.clients.remove(client);
+      client.sendData(new Gson().toJson(new Response(req.method, true)));
+    }
+    catch (WrongAuthentificationTokenException e)
+    {
+      client.sendData(new Gson().toJson(new Response(req.method, false)));
     }
   }
 
@@ -64,10 +82,18 @@ public class Authenticator extends MaloWProcess
 
   public void ClientConnected(NetworkChannel nc)
   {
-    System.out.println("New client added to Authenticator: " + nc.getChannelID());
-    nc.setNotifier(this);
-    nc.start();
-    this.clients.add(nc);
+    if (nc instanceof Client)
+    {
+      Client client = (Client) nc;
+      System.out.println("New client added to Authenticator: " + client.getChannelID());
+      client.setNotifier(this);
+      client.start();
+      this.clients.add(client);
+    }
+    else
+    {
+      throw new RuntimeException("Client connected that was not of type Client");
+    }
   }
 
 }

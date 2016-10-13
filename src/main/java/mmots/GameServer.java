@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.github.malow.malowlib.MaloWProcess;
-import com.github.malow.malowlib.NetworkPacket;
 import com.github.malow.malowlib.ProcessEvent;
 
 public class GameServer extends MaloWProcess
@@ -18,7 +17,7 @@ public class GameServer extends MaloWProcess
 
   public void addAuthorizedClient(Client client)
   {
-    client.networkChannel.setNotifier(this);
+    client.setNotifier(this);
     this.clients.add(client);
     System.out.println("New client added to GameServer: " + client.email);
   }
@@ -29,11 +28,11 @@ public class GameServer extends MaloWProcess
     while (this.stayAlive)
     {
       ProcessEvent ev = this.waitEvent();
-      if (ev instanceof NetworkPacket)
+      if (ev instanceof GameNetworkPacket)
       {
-        NetworkPacket packet = (NetworkPacket) ev;
-        System.out.println("Msg received from client " + packet.getSender().getChannelID() + ": " + packet.getMessage());
-        packet.getSender().sendData("Response hihi");
+        GameNetworkPacket packet = (GameNetworkPacket) ev;
+        System.out.println("Msg received from client " + packet.client.getChannelID() + ": " + packet.message);
+        packet.client.sendData("Response hihi");
       }
     }
   }
@@ -43,11 +42,11 @@ public class GameServer extends MaloWProcess
   {
     for (Client client : this.clients)
     {
-      client.networkChannel.close();
+      client.close();
     }
     for (Client client : this.clients)
     {
-      client.networkChannel.waitUntillDone();
+      client.waitUntillDone();
     }
   }
 }

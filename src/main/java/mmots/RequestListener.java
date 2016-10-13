@@ -1,5 +1,7 @@
 package mmots;
 
+import java.net.Socket;
+
 import com.github.malow.malowlib.NetworkChannel;
 import com.github.malow.malowlib.NetworkServer;
 
@@ -17,6 +19,12 @@ public class RequestListener extends NetworkServer
   public void clientConnected(NetworkChannel nc)
   {
     this.authenticator.ClientConnected(nc);
+  }
+
+  @Override
+  public NetworkChannel createNetworkChannel(Socket socket)
+  {
+    return new Client(socket);
   }
 
 }
