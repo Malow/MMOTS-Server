@@ -4,6 +4,8 @@ import java.util.Scanner;
 
 import com.github.malow.accountserver.AccountServer;
 import com.github.malow.accountserver.AccountServerConfig;
+import com.github.malow.malowlib.MaloWLogger;
+import com.github.malow.malowlib.MaloWLogger.LogLevel;
 
 public class MmotsServer
 {
@@ -11,7 +13,7 @@ public class MmotsServer
   {
     startup();
 
-    goToInput();
+    handleInput();
 
     shutdown();
   }
@@ -22,6 +24,10 @@ public class MmotsServer
 
   private static void startup()
   {
+    MaloWLogger.setLoggingThreshold(LogLevel.INFO);
+    MaloWLogger.setLogToFile(true);
+    MaloWLogger.setLogToSyso(true);
+    MaloWLogger.setLogToSpecificFiles(false);
     startupHttpsServer(7000);
     startupSocketServer(7001);
   }
@@ -58,15 +64,20 @@ public class MmotsServer
     gameServer.close();
   }
 
-  private static void goToInput()
+  private static void handleInput()
   {
     String input = "";
     Scanner in = new Scanner(System.in);
     while (!input.equals("shutdown"))
     {
-      System.out.print("> ");
       input = in.next();
+      if (input.equals("DropAllGameClients")) dropAllGameClients();
     }
     in.close();
+  }
+
+  private static void dropAllGameClients()
+  {
+    gameServer.dropAllClients();
   }
 }

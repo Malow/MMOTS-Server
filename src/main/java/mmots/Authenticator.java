@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.github.malow.accountserver.AccountServer;
 import com.github.malow.accountserver.database.AccountAccessor.WrongAuthentificationTokenException;
+import com.github.malow.malowlib.MaloWLogger;
 import com.github.malow.malowlib.MaloWProcess;
 import com.github.malow.malowlib.NetworkChannel;
 import com.github.malow.malowlib.ProcessEvent;
@@ -85,7 +86,7 @@ public class Authenticator extends MaloWProcess
     if (nc instanceof Client)
     {
       Client client = (Client) nc;
-      System.out.println("New client added to Authenticator: " + client.getChannelID());
+      MaloWLogger.info("New client added to Authenticator: " + client.getChannelID());
       client.setNotifier(this);
       client.start();
       this.clients.add(client);
